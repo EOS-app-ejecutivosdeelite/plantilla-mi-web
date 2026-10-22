@@ -1,0 +1,187 @@
+<!-- ╔═══════════════════════════════════════════════════════════════════════╗
+     ║  FORMULARIO DE CAPTACIÓN · una pregunta por pantalla                  ║
+     ║                                                                       ║
+     ║  Pegá esto en tu landing donde quieras que aparezca el formulario.    ║
+     ║  Funciona solo: no necesita ninguna otra librería.                    ║
+     ║                                                                       ║
+     ║  👉 LO ÚNICO QUE TENÉS QUE EDITAR son las dos primeras líneas de la   ║
+     ║     configuración (tu llave y tu página de gracias) y la LISTA DE     ║
+     ║     PREGUNTAS. Todo lo demás funciona como está.                      ║
+     ╚═══════════════════════════════════════════════════════════════════════╝ -->
+
+<div id="capta"></div>
+
+<script>
+(function () {
+  // ─────────────────────────────────────────────────────────────────────────
+  //  1 · TU CONFIGURACIÓN
+  // ─────────────────────────────────────────────────────────────────────────
+  var TITULO  = "Tu tranquilidad vale mucho más que 10 minutos";
+  var BAJADA  = "Recibe una asesoría profesional gratuita";
+
+  var LLAVE   = "PEGA-AQUI-TU-LLAVE";
+  var GRACIAS = "https://TU-DOMINIO/gracias";
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  2 · TUS PREGUNTAS  ·  agregá, sacá o cambiá las que quieras
+  //
+  //  Cada pregunta necesita:
+  //     id      · con qué nombre se guarda la respuesta (sin espacios)
+  //     titulo  · lo que lee la persona
+  //     tipo    · "texto" | "telefono" | "email" | "opciones" | "numero"
+  //
+  //  Y puede llevar, si querés:
+  //     ayuda    · una línea chica debajo del título
+  //     opciones · sólo para tipo "opciones". Avanza sola al elegir.
+  //     opcional · true si se puede dejar en blanco
+  //
+  //  🛑 NO SAQUES las preguntas con id "nombre" y "telefono": sin esas dos el
+  //     lead no entra. Podés cambiarles el título y el orden, no el id.
+  // ─────────────────────────────────────────────────────────────────────────
+  var PREGUNTAS = [
+    { id: "donde", titulo: "¿Dónde estás hoy?",
+      tipo: "opciones", opciones: ["En una isapre", "En Fonasa", "No lo sé"] },
+
+    { id: "paga", titulo: "¿Cuánto pagas hoy por tu salud?",
+      ayuda: "Si no lo sabes con exactitud, pon lo aproximado.",
+      tipo: "texto" },
+
+    { id: "cargas", titulo: "¿Cuántas cargas tienes?",
+      ayuda: "Las personas que dependen de tu plan.",
+      tipo: "opciones", opciones: ["Ninguna", "1", "2", "3 o más"] },
+
+    { id: "nombre", titulo: "¿Cómo te llamas?",
+      tipo: "texto" },
+
+    { id: "telefono", titulo: "¿A qué WhatsApp te escribimos?",
+      ayuda: "Escríbelo sin el +56. Por ejemplo: 9 1234 5678",
+      tipo: "telefono" },
+
+    { id: "email", titulo: "¿Y tu correo?",
+      tipo: "email", opcional: true }
+  ];
+
+  var TEXTO_BOTON  = "Continuar";
+  var TEXTO_FINAL  = "Quiero que me contacten";
+
+  // ═════════════════════════════════════════════════════════════════════════
+  //  De acá para abajo no hace falta tocar nada.
+  // ═════════════════════════════════════════════════════════════════════════
+
+  var caja = document.getElementById("capta");
+  var paso = 0;
+  var resp = {};
+
+  var CSS = ''
+    /* 🔴 FONDO PROPIO, NO HEREDADO. Sin esto el formulario toma el fondo de la
+       landing y, si es oscura, el texto —fijo en gris oscuro— desaparece. */
+    + '#capta{--oro:#c9a24b;--tinta:#1b1e21;--gris:#6b6457;--linea:#ddd6c8;'
+    + 'background:#fff;padding:26px 24px;border-radius:14px;'
+    + 'max-width:520px;margin:0 auto;font:16px/1.55 system-ui,"Segoe UI",Arial,sans-serif;color:var(--tinta)}'
+    + '#capta *{box-sizing:border-box}'
+    + '#capta h2{font-size:25px;line-height:1.25;margin:0 0 6px;font-weight:700}'
+    + '#capta .bajada{color:var(--gris);font-size:15px;margin:0 0 20px}'
+    + '#capta .barra{height:4px;background:var(--linea);border-radius:99px;overflow:hidden;margin-bottom:22px}'
+    + '#capta .barra i{display:block;height:100%;background:var(--oro);transition:width .3s}'
+    + '#capta h3{font-size:22px;line-height:1.3;margin:0 0 6px}'
+    + '#capta .ayuda{color:var(--gris);font-size:14px;margin:0 0 16px}'
+    + '#capta input{width:100%;padding:13px 14px;font-size:17px;border:1px solid var(--linea);'
+    + 'border-radius:9px;outline:0;background:#fff;color:var(--tinta)}'
+    + '#capta input:focus{border-color:var(--oro)}'
+    + '#capta .ops{display:grid;gap:8px;margin-top:4px}'
+    + '#capta .op{padding:13px 14px;border:1px solid var(--linea);border-radius:9px;background:#fff;'
+    + 'text-align:left;font-size:16px;cursor:pointer;color:var(--tinta);transition:.12s}'
+    + '#capta .op:hover{border-color:var(--oro)}'
+    + '#capta .op.on{border-color:var(--oro);background:#faf4e6}'
+    + '#capta .pie{display:flex;gap:10px;align-items:center;margin-top:18px}'
+    + '#capta .sig{flex:1;padding:13px;border:0;border-radius:9px;background:var(--oro);'
+    + 'color:var(--tinta);font-weight:700;font-size:16px;cursor:pointer}'
+    + '#capta .sig[disabled]{opacity:.5;cursor:default}'
+    + '#capta .atras{background:none;border:0;color:var(--gris);cursor:pointer;font-size:14px;padding:6px}'
+    + '#capta .err{color:#b3261e;font-size:14px;margin-top:10px;min-height:20px}'
+    + '#capta .fin{text-align:center;padding:30px 0}';
+  var s = document.createElement("style"); s.textContent = CSS; document.head.appendChild(s);
+
+  function validar(p, v) {
+    if (p.opcional && !v) return null;
+    if (!v) return "Esta no la podemos saltear.";
+    if (p.tipo === "telefono" && !/^9\d{8}$/.test(String(v).replace(/\D/g, "").replace(/^56/, "")))
+      return "El WhatsApp tiene 9 dígitos y empieza con 9, sin el +56.";
+    if (p.tipo === "email" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return "Revisá el correo.";
+    return null;
+  }
+
+  function dibujar() {
+    if (paso >= PREGUNTAS.length) return enviar();
+    var p = PREGUNTAS[paso];
+    var pct = Math.round((paso / PREGUNTAS.length) * 100);
+    var campo = p.tipo === "opciones"
+      ? '<div class="ops">' + p.opciones.map(function (o, i) {
+          return '<button type="button" class="op' + (resp[p.id] === o ? " on" : "") + '" data-o="' + i + '">' + o + "</button>";
+        }).join("") + "</div>"
+      : '<input id="cv" type="' + (p.tipo === "email" ? "email" : p.tipo === "numero" ? "tel" : "text")
+        + '" value="' + (resp[p.id] || "") + '" placeholder="' + (p.tipo === "telefono" ? "9 1234 5678" : "") + '">';
+
+    /* El título y la bajada acompañan TODO el formulario, no sólo la primera
+       pantalla: en un formulario de una pregunta por vez, lo que sostiene a
+       la persona hasta el final es seguir viendo para qué está contestando. */
+    var cabecera = (TITULO ? "<h2>" + TITULO + "</h2>" : "")
+      + (BAJADA ? '<p class="bajada">' + BAJADA + "</p>" : "");
+
+    caja.innerHTML = cabecera + '<div class="barra"><i style="width:' + pct + '%"></i></div>'
+      + "<h3>" + p.titulo + "</h3>"
+      + (p.ayuda ? '<p class="ayuda">' + p.ayuda + "</p>" : "")
+      + campo
+      + '<div class="err" id="ce"></div>'
+      + '<div class="pie">'
+      + (paso > 0 ? '<button type="button" class="atras" id="cb">← Atrás</button>' : "")
+      + (p.tipo === "opciones" ? "" : '<button type="button" class="sig" id="cn">'
+        + (paso === PREGUNTAS.length - 1 ? TEXTO_FINAL : TEXTO_BOTON) + "</button>")
+      + "</div>";
+
+    var inp = document.getElementById("cv");
+    if (inp) { inp.focus(); inp.addEventListener("keydown", function (e) { if (e.key === "Enter") avanzar(); }); }
+    var b = document.getElementById("cb"); if (b) b.onclick = function () { paso--; dibujar(); };
+    var n = document.getElementById("cn"); if (n) n.onclick = avanzar;
+
+    /* El auto-avance de las opciones: los 180 ms alcanzan para que se vea
+       marcada antes de cambiar de pregunta. Sin esa pausa parece un salto. */
+    [].forEach.call(caja.querySelectorAll(".op"), function (el) {
+      el.onclick = function () {
+        resp[p.id] = p.opciones[+el.dataset.o];
+        [].forEach.call(caja.querySelectorAll(".op"), function (o) { o.classList.remove("on"); });
+        el.classList.add("on");
+        setTimeout(function () { paso++; dibujar(); }, 180);
+      };
+    });
+  }
+
+  function avanzar() {
+    var p = PREGUNTAS[paso];
+    var inp = document.getElementById("cv");
+    var v = inp ? inp.value.trim() : resp[p.id];
+    var e = validar(p, v);
+    if (e) { document.getElementById("ce").textContent = e; return; }
+    resp[p.id] = v;
+    paso++; dibujar();
+  }
+
+  function enviar() {
+    caja.innerHTML = (TITULO ? "<h2>" + TITULO + "</h2>" : "") + '<div class="fin"><h3>Enviando…</h3></div>';
+    var f = document.createElement("form");
+    f.method = "post";
+    f.action = "https://app.ejecutivosdeelite.com/api/crm/leads/plan";
+    function campo(k, v) { var i = document.createElement("input"); i.type = "hidden"; i.name = k; i.value = v; f.appendChild(i); }
+    campo("llave", LLAVE);
+    campo("gracias", GRACIAS);
+    campo("origen", "Landing");
+    /* El teléfono viaja con el +56 que espera EOS. */
+    if (resp.telefono) resp.telefono = "+56" + String(resp.telefono).replace(/\D/g, "").replace(/^56/, "");
+    for (var k in resp) if (Object.prototype.hasOwnProperty.call(resp, k)) campo(k, resp[k]);
+    document.body.appendChild(f);
+    f.submit();
+  }
+
+  dibujar();
+})();
+</script>
